@@ -1,0 +1,3 @@
+[submodule "vdf-src"]
+	path = vdf-src
+	url = https://github.com/Trac-Systems/vdf-FORK
