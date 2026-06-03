@@ -1,0 +1,54 @@
+name: Build and Test
+on:
+  push:
+    branches:
+      - "**"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk:3.1.74
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Make version
+        run: make -v
+      - name: Install dependencies
+        run: npm i
+      - name: Build project
+        run: npm run build
+      - name: Upload npm package
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: |
+            ./package.json
+            ./dist
+          retention-days: 1
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk:3.1.74
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+          path: .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i
+      - run: npm run test

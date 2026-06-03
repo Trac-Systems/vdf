@@ -1,0 +1,36 @@
+name: Publish trac-vdf to npm on release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk:3.1.74
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          submodules: recursive
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: npm i
+      - name: Build project
+        run: npm run build
+      - name: Run tests
+        run: npm run test
+      - name: Publish to npm
+        run: npm publish --access public

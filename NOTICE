@@ -1,0 +1,17 @@
+trac-vdf
+Copyright 2026 Trac Systems.
+
+This product includes software derived from Trac-Systems/vdf-FORK
+at commit 2731d2e2850797d752d70f49e4c263a9bf3b0c82.
+
+The upstream VDF implementation is derived from poanetwork/vdf and
+from Chia Network's VDF reference / competition implementation.
+
+Chia vdf-toy
+Copyright 2018 and onwards Chia Network Inc.
+
+This product includes software developed at
+Chia Network Inc (https://www.chia.net/).
+
+Modifications and JavaScript / Node / WASM packaging:
+Copyright 2026 Trac Systems.
