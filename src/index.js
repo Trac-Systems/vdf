@@ -15,6 +15,37 @@
 const createVdfWasmModule = require('./internal/vdf-wasm.js');
 const b4a = require('b4a');
 
+function ensureCrypto() {
+  if (
+    typeof globalThis !== 'undefined' &&
+    globalThis.crypto &&
+    typeof globalThis.crypto.getRandomValues === 'function'
+  ) {
+    return;
+  }
+
+  const runtimeCrypto = require('crypto');
+  const webCrypto =
+    runtimeCrypto.webcrypto ||
+    (runtimeCrypto.default && runtimeCrypto.default.webcrypto) ||
+    runtimeCrypto.default ||
+    runtimeCrypto;
+  const randomFillSync =
+    runtimeCrypto.randomFillSync ||
+    (runtimeCrypto.default && runtimeCrypto.default.randomFillSync);
+
+  if (webCrypto && typeof webCrypto.getRandomValues === 'function') {
+    globalThis.crypto = webCrypto;
+  } else if (typeof randomFillSync === 'function') {
+    globalThis.crypto = {
+      getRandomValues(view) {
+        randomFillSync(view);
+        return view;
+      },
+    };
+  }
+}
+
 function splitU64(value) {
   const n = BigInt(value);
   return [Number(n & 0xffffffffn), Number(n >> 32n)];
@@ -73,6 +104,7 @@ function verify(module, fn, challenge, difficulty, proof, discriminantSizeBits) 
 }
 
 async function loadVdfWasm(options = {}) {
+  ensureCrypto();
   const module = await createVdfWasmModule({ noInitialRun: true, ...options });
   return {
     module,
