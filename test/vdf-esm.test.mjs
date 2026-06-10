@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import b4a from 'b4a';
-import { loadVdfWasm } from '../dist/wasm/vdf.mjs';
+import { solveWesolowski, verifyWesolowski } from '../dist/wasm/vdf.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const artifactPath = path.resolve(__dirname, '../dist/wasm/vdf.mjs');
@@ -25,15 +25,13 @@ if (!fs.existsSync(artifactPath)) {
   throw new Error('VDF WASM ESM artifact not found. Please run `npm run build` before running tests.');
 }
 
-const vdf = await loadVdfWasm();
 const challenge = b4a.from([0xaa]);
 const difficulty = 500n;
-const proof = vdf.solveWesolowski(challenge, difficulty, 40);
+const proof = await solveWesolowski(challenge, difficulty, 40);
 
-if (!vdf.verifyWesolowski(challenge, difficulty, proof, 40)) {
-  throw new Error('Wesolowski ESM proof did not verify');
+if (!(await verifyWesolowski(challenge, difficulty, proof, 40))) {
+  throw new Error('Lazy Wesolowski ESM proof did not verify');
 }
-
 console.log('wasm esm wesolowski ok', {
   proofBytes: proof.length,
   proofHex: b4a.toString(proof, 'hex'),

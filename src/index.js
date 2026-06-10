@@ -15,6 +15,8 @@
 const createVdfWasmModule = require('./internal/vdf-wasm.js');
 const b4a = require('b4a');
 
+let vdfWasm;
+
 function ensureCrypto() {
   if (
     typeof globalThis !== 'undefined' &&
@@ -124,4 +126,22 @@ async function loadVdfWasm(options = {}) {
   };
 }
 
-module.exports = { loadVdfWasm };
+async function getVdfWasm() {
+  if (!vdfWasm) {
+    vdfWasm = loadVdfWasm();
+  }
+  return vdfWasm;
+}
+
+async function solveWesolowski(challenge, difficulty, discriminantSizeBits) {
+  const vdf = await getVdfWasm();
+  return vdf.solveWesolowski(challenge, difficulty, discriminantSizeBits);
+}
+
+async function verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits) {
+  const vdf = await getVdfWasm();
+  return vdf.verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits);
+}
+
+module.exports.solveWesolowski = solveWesolowski;
+module.exports.verifyWesolowski = verifyWesolowski;

@@ -10,6 +10,15 @@ npm run build
 
 Generated package artifacts are written to `dist/wasm`.
 
+## Usage
+
+```js
+const { solveWesolowski, verifyWesolowski } = require('@tracsystems/trac-vdf');
+
+const proof = await solveWesolowski(challenge, difficulty, discriminantSizeBits);
+const ok = await verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits);
+```
+
 ## Test
 
 ```sh

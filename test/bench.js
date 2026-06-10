@@ -12,32 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { loadVdfWasm } = require('../dist/wasm/vdf.js');
+const { solveWesolowski, verifyWesolowski } = require('../dist/wasm/vdf.js');
 const b4a = require('b4a');
 
-function timeMs(fn, repeats) {
+async function timeMs(fn, repeats) {
   const start = process.hrtime.bigint();
   let value;
   for (let i = 0; i < repeats; i += 1) {
-    value = fn();
+    value = await fn();
   }
   const elapsed = Number(process.hrtime.bigint() - start) / 1e6;
   return [elapsed / repeats, value];
 }
 
 async function main() {
-  const vdf = await loadVdfWasm();
   const challenge = b4a.from([0xaa]);
   const bits = Number(process.env.VDF_BITS || 256);
   const difficulty = BigInt(process.env.VDF_WESOLOWSKI_DIFFICULTY || 500);
   const repeats = Number(process.env.VDF_REPEATS || 5);
 
-  const [solveMs, proof] = timeMs(
-    () => vdf.solveWesolowski(challenge, difficulty, bits),
+  const [solveMs, proof] = await timeMs(
+    () => solveWesolowski(challenge, difficulty, bits),
     repeats,
   );
-  const [verifyMs] = timeMs(() => {
-    if (!vdf.verifyWesolowski(challenge, difficulty, proof, bits)) {
+  const [verifyMs] = await timeMs(async () => {
+    if (!(await verifyWesolowski(challenge, difficulty, proof, bits))) {
       throw new Error('Wesolowski proof did not verify');
     }
   }, repeats);

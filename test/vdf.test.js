@@ -22,15 +22,14 @@ if (!fs.existsSync(artifactPath)) {
   throw new Error('VDF WASM artifact not found. Please run `npm run build` before running tests.');
 }
 
-const { loadVdfWasm } = require('../dist/wasm/vdf.js');
+const { solveWesolowski, verifyWesolowski } = require('../dist/wasm/vdf.js');
 
 async function main() {
-  const vdf = await loadVdfWasm();
   const challenge = b4a.from([0xaa]);
   const difficulty = 500n;
-  const proof = vdf.solveWesolowski(challenge, difficulty, 40);
-  if (!vdf.verifyWesolowski(challenge, difficulty, proof, 40)) {
-    throw new Error('Wesolowski proof did not verify');
+  const proof = await solveWesolowski(challenge, difficulty, 40);
+  if (!(await verifyWesolowski(challenge, difficulty, proof, 40))) {
+    throw new Error('Lazy Wesolowski proof did not verify');
   }
   console.log('wasm wesolowski ok', {
     proofBytes: proof.length,

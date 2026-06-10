@@ -15,6 +15,8 @@
 import createVdfWasmModule from './internal/vdf-wasm.js';
 import b4a from 'b4a';
 
+let vdfWasm;
+
 async function ensureCrypto() {
   if (
     typeof globalThis !== 'undefined' &&
@@ -103,7 +105,7 @@ function verify(module, fn, challenge, difficulty, proof, discriminantSizeBits) 
   );
 }
 
-export async function loadVdfWasm(options = {}) {
+async function loadVdfWasm(options = {}) {
   await ensureCrypto();
   const module = await createVdfWasmModule({ noInitialRun: true, ...options });
   return {
@@ -124,4 +126,19 @@ export async function loadVdfWasm(options = {}) {
   };
 }
 
-export default { loadVdfWasm };
+async function getVdfWasm() {
+  if (!vdfWasm) {
+    vdfWasm = loadVdfWasm();
+  }
+  return vdfWasm;
+}
+
+export async function solveWesolowski(challenge, difficulty, discriminantSizeBits) {
+  const vdf = await getVdfWasm();
+  return vdf.solveWesolowski(challenge, difficulty, discriminantSizeBits);
+}
+
+export async function verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits) {
+  const vdf = await getVdfWasm();
+  return vdf.verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits);
+}
