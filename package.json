@@ -2,9 +2,13 @@
   "name": "@tracsystems/trac-vdf",
   "version": "0.0.1",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Trac-Systems/vdf.git"
+    "url": "https://github.com/Trac-Systems/vdf"
   },
   "main": "dist/wasm/vdf.js",
   "module": "dist/wasm/vdf.mjs",
