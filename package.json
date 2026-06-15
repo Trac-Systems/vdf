@@ -23,6 +23,7 @@
     "build": "make",
     "clean": "make clean",
     "test": "node test/vdf.test.js && node test/vdf-esm.test.mjs",
+    "prepack": "npm run build",
     "bench": "node test/bench.js"
   },
   "dependencies": {

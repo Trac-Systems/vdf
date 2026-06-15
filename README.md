@@ -27,6 +27,56 @@ npm run test
 
 The test suite checks both CommonJS and ESM entrypoints.
 
+## Benchmark
+
+The root benchmark measures the packaged WASM Wesolowski interface. Build the
+WASM artifacts first, then run the benchmark:
+
+```sh
+npm run build
+npm run bench
+```
+
+`make bench` does both steps in one command:
+
+```sh
+make bench
+```
+
+The benchmark accepts these environment variables:
+
+- `VDF_BITS`: discriminant size in bits. Default: `256`.
+- `VDF_WESOLOWSKI_DIFFICULTY`: Wesolowski difficulty, i.e. the number of
+  sequential squaring iterations. Default: `500`.
+- `VDF_REPEATS`: number of solve/verify repetitions to average. Default: `5`.
+
+Example:
+
+```sh
+VDF_BITS=2048 VDF_WESOLOWSKI_DIFFICULTY=500000 VDF_REPEATS=1 npm run bench
+```
+
+The output is a single summary line:
+
+```text
+wesolowski bits=2048 difficulty=500000 repeats=1 solve_ms=... verify_ms=... proof_bytes=...
+```
+
+Use low `VDF_REPEATS` values for high difficulties, because solve time scales
+roughly linearly with `VDF_WESOLOWSKI_DIFFICULTY`.
+
+Native Rust benchmarks from the underlying VDF implementation are also
+available under `vdf-src`:
+
+```sh
+cargo bench --manifest-path vdf-src/Cargo.toml -p vdf
+```
+
+Those Criterion benchmarks cover lower-level native operations such as
+classgroup operations and discriminant generation. They are useful for native
+Rust profiling, while `npm run bench` / `make bench` measure the JavaScript
+WASM package surface.
+
 ## License and attribution
 
 This project is licensed under the Apache License 2.0.

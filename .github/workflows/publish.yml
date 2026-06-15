@@ -32,5 +32,10 @@ jobs:
         run: npm run build
       - name: Run tests
         run: npm run test
+      - name: Verify package artifacts
+        run: |
+          test -f dist/wasm/vdf.js
+          test -f dist/wasm/vdf.mjs
+          test -f dist/wasm/internal/vdf-wasm.js
       - name: Publish to npm
         run: npm publish --access public
