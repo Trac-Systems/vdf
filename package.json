@@ -1,6 +1,6 @@
 {
   "name": "@tracsystems/trac-vdf",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "Apache-2.0",
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
@@ -22,7 +22,7 @@
   "scripts": {
     "build": "make",
     "clean": "make clean",
-    "test": "node test/vdf.test.js && node test/vdf-esm.test.mjs",
+    "test": "node test/vdf.test.js && node test/vdf-esm.test.mjs && node test/progress.test.mjs && node vdf-src/scripts/verify-wasm-large-l-vectors.mjs dist/wasm/vdf.mjs dist/wasm/vdf.js",
     "prepack": "npm run build",
     "bench": "node test/bench.js"
   },

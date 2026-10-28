@@ -85,13 +85,50 @@ function assertOk(module, code) {
   }
 }
 
-function solve(module, fn, challenge, difficulty, discriminantSizeBits) {
-  const [lo, hi] = splitU64(difficulty);
-  return withBytes(module, challenge, (challengePtr, challengeLen) => {
-    const code = fn(challengePtr, challengeLen, lo, hi, discriminantSizeBits);
-    assertOk(module, code);
-    return readLastResult(module);
-  });
+const SOLVE_PHASES = [
+  null, 'discriminant-sieve', 'discriminant-candidates', 'squaring',
+  'challenge-prime', 'proof-setup', 'proof-blocks', 'proof-aggregation', 'serialization',
+];
+
+function solve(module, fn, challenge, difficulty, discriminantSizeBits, options = {}) {
+  if (options === null || typeof options !== 'object') {
+    throw new TypeError('solve options must be an object');
+  }
+  const { onProgress } = options;
+  if (onProgress !== undefined && typeof onProgress !== 'function') {
+    throw new TypeError('onProgress must be a function');
+  }
+  let observerFailed = false;
+  let observerError;
+  if (onProgress) {
+    module.onVdfProgress = (phase, lo, hi) => {
+      if (observerFailed) return;
+      try {
+        onProgress({
+          phase: SOLVE_PHASES[phase],
+          completed: (BigInt(hi >>> 0) << 32n) | BigInt(lo >>> 0),
+        });
+      } catch (error) {
+        // Do not unwind a JS exception through Rust frames: let Rust release its
+        // allocations, then reject the solve and remove the observer.
+        observerFailed = true;
+        observerError = error;
+      }
+    };
+    fn = module._vdf_solve_wesolowski_with_progress;
+  }
+  try {
+    const [lo, hi] = splitU64(difficulty);
+    const proof = withBytes(module, challenge, (challengePtr, challengeLen) => {
+      const code = fn(challengePtr, challengeLen, lo, hi, discriminantSizeBits);
+      assertOk(module, code);
+      return readLastResult(module);
+    });
+    if (observerFailed) throw observerError;
+    return proof;
+  } finally {
+    module.onVdfProgress = undefined;
+  }
 }
 
 function verify(module, fn, challenge, difficulty, proof, discriminantSizeBits) {
@@ -110,8 +147,8 @@ async function loadVdfWasm(options = {}) {
   const module = await createVdfWasmModule({ noInitialRun: true, ...options });
   return {
     module,
-    solveWesolowski(challenge, difficulty, discriminantSizeBits) {
-      return solve(module, module._vdf_solve_wesolowski, challenge, difficulty, discriminantSizeBits);
+    solveWesolowski(challenge, difficulty, discriminantSizeBits, options) {
+      return solve(module, module._vdf_solve_wesolowski, challenge, difficulty, discriminantSizeBits, options);
     },
     verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits) {
       return verify(
@@ -133,9 +170,9 @@ async function getVdfWasm() {
   return vdfWasm;
 }
 
-export async function solveWesolowski(challenge, difficulty, discriminantSizeBits) {
+export async function solveWesolowski(challenge, difficulty, discriminantSizeBits, options) {
   const vdf = await getVdfWasm();
-  return vdf.solveWesolowski(challenge, difficulty, discriminantSizeBits);
+  return vdf.solveWesolowski(challenge, difficulty, discriminantSizeBits, options);
 }
 
 export async function verifyWesolowski(challenge, difficulty, proof, discriminantSizeBits) {
