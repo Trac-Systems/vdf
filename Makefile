@@ -33,6 +33,7 @@ MP_WASM_LIB := $(MP_WASM_PREFIX)/lib/lib$(MP_NAME).a
 CC_FOR_BUILD ?= cc
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 WASM_RUSTFLAGS := -L native=$(MP_WASM_PREFIX)/lib \
+	-C link-arg=--js-library=$(CURDIR)/src/progress-library.js \
 	-C link-arg=-sMODULARIZE=1 \
 	-C link-arg=-sEXPORT_NAME=createVdfWasmModule \
 	-C link-arg=-sENVIRONMENT=web,worker,node \
@@ -40,13 +41,13 @@ WASM_RUSTFLAGS := -L native=$(MP_WASM_PREFIX)/lib \
 	-C link-arg=-sALLOW_MEMORY_GROWTH=1 \
 	-C link-arg=-sWASM_BIGINT \
 	-C link-arg=-sEXPORTED_RUNTIME_METHODS=["HEAPU8"] \
-	-C link-arg=-sEXPORTED_FUNCTIONS=["_main","_vdf_alloc","_vdf_dealloc","_vdf_last_result_ptr","_vdf_last_result_len","_vdf_last_error_ptr","_vdf_last_error_len","_vdf_solve_wesolowski","_vdf_verify_wesolowski"]
+	-C link-arg=-sEXPORTED_FUNCTIONS=["_main","_vdf_alloc","_vdf_dealloc","_vdf_last_result_ptr","_vdf_last_result_len","_vdf_last_error_ptr","_vdf_last_error_len","_vdf_solve_wesolowski","_vdf_solve_wesolowski_with_progress","_vdf_verify_wesolowski"]
 
 .PHONY: all wasm test bench wasm-lib clean
 
 all: wasm
 
-wasm: $(MP_WASM_LIB) src/index.js src/index.mjs
+wasm: $(MP_WASM_LIB) src/index.js src/index.mjs src/progress-library.js
 	rustup target add $(WASM_TARGET)
 	CARGO_TARGET_DIR='$(CARGO_TARGET_DIR)' RUSTFLAGS='$(WASM_RUSTFLAGS)' cargo build --manifest-path $(VDF_SRC_DIR)/Cargo.toml -p vdf-wasm --target $(WASM_TARGET) --release
 	mkdir -p $(DIST_INTERNAL_DIR)
@@ -57,6 +58,8 @@ wasm: $(MP_WASM_LIB) src/index.js src/index.mjs
 test: wasm
 	node test/vdf.test.js
 	node test/vdf-esm.test.mjs
+	node test/progress.test.mjs
+	node vdf-src/scripts/verify-wasm-large-l-vectors.mjs $(DIST_MJS) $(DIST_JS)
 
 bench: wasm
 	node test/bench.js
